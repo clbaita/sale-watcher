@@ -1,38 +1,27 @@
-import axios from "axios";
-import cheerio from "cheerio";
+import process from "node:process";
+import * as path from "node:path";
+import Bree from 'bree';
 
-const getUrls = () => {
-    return [
-        { 
-          link: "https://www.amazon.com.au/Gigabyte-GeForce-Gaming-V2-Graphics/dp/B096Y2TYKV/",
-          cssClass: ".a-box-group span.a-price span.a-offscreen"
-        }
+const bree = new Bree({
+    /**
+     * Always set the root option when doing any type of
+     * compiling with bree. This just makes it clearer where
+     * bree should resolve the jobs folder from. By default it
+     * resolves to the jobs folder relative to where the program
+     * is executed.
+     */
+    root: path.join(__dirname, "jobs"),
+    /**
+     * We only need the default extension to be "ts"
+     * when we are running the app with ts-node - otherwise
+     * the compiled-to-js code still needs to use JS
+     */
+    defaultExtension: process.env.TS_NODE ? "ts" : "js",
+    jobs: [
+        {name: "check-prices", interval: "1m"}
     ]
-}
-
-const fetchData = async (url: string) => {
-    console.log("Crawling data...")
-    // make http call to url
-    const response = await axios(url).catch((err) => console.log(err));
-
-    if(response?.status !== 200){
-        console.log("Error occurred while fetching data");
-        return;
-    }
-    return response;
-}
-
-const urls = getUrls()
-
-fetchData(urls[0].link).then((res) => {
-    
-    if (!res) { return }
-
-    const html = res.data
-    const $ = cheerio.load(html)
-    const price = $(urls[0].cssClass).text()
-        .trim()
-        .split("$")
-        .filter(Boolean)[0]
-    console.log(price)
-})
+});
+  
+(async () => {
+await bree.start();
+})();
