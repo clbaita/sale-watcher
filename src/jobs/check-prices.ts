@@ -2,14 +2,19 @@ import { parentPort } from "node:worker_threads";
 import process from "node:process";
 import axios from "axios";
 import cheerio from "cheerio";
+import * as fs from 'fs';
+import path from "node:path";
+import { Url } from "../types";
 
 const getUrls = () => {
-    return [
-        { 
-          link: "https://www.amazon.com.au/Gigabyte-GeForce-Gaming-V2-Graphics/dp/B096Y2TYKV/",
-          cssClass: ".a-box-group span.a-price span.a-offscreen"
-        }
-    ]
+    try {
+        const jsonString = fs.readFileSync(path.join(process.cwd(), "src/data/data.json"), "utf-8");
+        const jsonData: Url[] = JSON.parse(jsonString);
+        
+        return jsonData;
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 const fetchData = async (url: string) => {
@@ -26,20 +31,36 @@ const fetchData = async (url: string) => {
 const scrape = async () => {
     const urls = getUrls()
     
-    const data = await fetchData(urls[0].link)
-    
-    if (!data) { return }
+    if (!urls) { return }
 
-    const html = data
-    const $ = cheerio.load(html)
-    const price = $(urls[0].cssClass).text()
-        .trim()
-        .split("$")
-        .filter(Boolean)[0]
+    const updatedPrices = await Promise.all(urls.map(async (url): Promise<Url> => {
+        const data = await fetchData(url.link)
+
+        if (!data) { return { ...url }}
+
+        const html = data
+        const $ = cheerio.load(html)
+        const price = $(urls[0].cssClass).text()
+            .trim()
+            .split("$")
+            .filter(Boolean)[0]
+        
+        return {
+            ...url,
+            price: parseFloat(price)
+        }
+    }))
+
+    try {
+        // Write updatedPrices back to data.json
+        fs.writeFileSync(path.join(process.cwd(), "src/data/data.json"), JSON.stringify(updatedPrices, null, 2))
+    } catch (err) {
+        console.error(err);
+    }
     
     // Signal to parent that the job is done
     if (parentPort) {
-        parentPort.postMessage(price)
+        parentPort.postMessage("Done!")
     }
     else {
         process.exit(0)
