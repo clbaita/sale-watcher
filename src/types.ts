@@ -1,5 +1,5 @@
 export type Url = {
-    link: string;
-    cssClass: string;
-    price?: number;
+  link: string;
+  cssClass: string;
+  price?: number;
 };
