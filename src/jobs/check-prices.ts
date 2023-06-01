@@ -10,10 +10,12 @@ import sgMail from "@sendgrid/mail";
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY ?? "");
 
+const dataPath = path.join(process.cwd(), "data.json");
+
 const getUrls = () => {
   try {
     const jsonString = fs.readFileSync(
-      path.join(process.cwd(), "src/data/data.json"),
+      dataPath,
       "utf-8"
     );
     const jsonData: Url[] = JSON.parse(jsonString);
@@ -86,7 +88,7 @@ const scrape = async () => {
 
       return {
         ...url,
-        price: price,
+        price,
       };
     })
   );
@@ -94,7 +96,7 @@ const scrape = async () => {
   try {
     // Write updatedPrices back to data.json
     fs.writeFileSync(
-      path.join(process.cwd(), "src/data/data.json"),
+      dataPath,
       JSON.stringify(updatedPrices, null, 2)
     );
   } catch (err) {

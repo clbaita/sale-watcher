@@ -17,7 +17,7 @@ const bree = new Bree({
    * the compiled-to-js code still needs to use JS
    */
   defaultExtension: process.env.TS_NODE ? "ts" : "js",
-  jobs: [{ name: "check-prices", interval: "at 8am" }],
+  jobs: [{ name: "check-prices", interval: "1m" }], // Use at 8am in production
 });
 
 (async () => {
