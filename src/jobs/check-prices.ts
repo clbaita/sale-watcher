@@ -14,10 +14,7 @@ const dataPath = path.join(process.cwd(), "data.json");
 
 const getUrls = () => {
   try {
-    const jsonString = fs.readFileSync(
-      dataPath,
-      "utf-8"
-    );
+    const jsonString = fs.readFileSync(dataPath, "utf-8");
     const jsonData: Url[] = JSON.parse(jsonString);
     return jsonData;
   } catch (err) {
@@ -95,10 +92,7 @@ const scrape = async () => {
 
   try {
     // Write updatedPrices back to data.json
-    fs.writeFileSync(
-      dataPath,
-      JSON.stringify(updatedPrices, null, 2)
-    );
+    fs.writeFileSync(dataPath, JSON.stringify(updatedPrices, null, 2));
   } catch (err) {
     console.error(err);
   }
