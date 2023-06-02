@@ -32,31 +32,31 @@
 
         src = ./.;
 
+        nativeBuildInputs = [ pkgs.removeReferencesTo ];
+
         buildInputs = with pkgs; [ nodejs ];
 
         buildPhase = ''
           ln -s ${nodeDependencies}/lib/node_modules ./node_modules
           export PATH="${nodeDependencies}/bin:$PATH"
-          
-          mkdir -p $out/bin
           tsc
-          cp -r dist $out/bin
         '';
 
-        # installPhase = ''
-        #   mkdir -p $out/bin
-        #   cp -R dist/* $out/bin
-        #   cp package.json $out/bin
-        #   cp package-lock.json $out/bin
-        #   NODE_ENV=production npm ci
-        #   rm $out/bin/package.json
-        #   rm $out/bin/package-lock.json
-        # '';
+        installPhase = ''
+          cp -r dist $out
+          cp -r node_modules $out
+          cp data.json $out
+          runHook postInstall
+        '';
+
+        postInstall = ''
+          find "$out" -type f -exec remove-references-to -t ${nodeDependencies} '{}' +
+        '';
       };
     in
     {
       devShells.default = pkgs.mkShell {
-        buildInputs = with pkgs; [ node2nix nodejs pnpm yarn ];
+        buildInputs = with pkgs; [ node2nix nodejs pnpm yarn dive ];
 
         shellHook = ''
           echo "node `${pkgs.nodejs}/bin/node --version`"
@@ -69,14 +69,13 @@
 
         copyToRoot = pkgs.buildEnv {
           name = "image-root";
-          paths = [ pkgs.nodejs saleWatcher ];
+          paths = [ pkgs.nodejs ];
           pathsToLink = [ "/bin" ];
         };
 
         config = {
-          Cmd = [ "node" "/bin/index.js" ];
-          WorkingDir = "/app";
-          Volumes = { "/app" = { }; };
+          Cmd = [ "/bin/node" "${saleWatcher}/index.js" ];
+          WorkingDir = "${saleWatcher}";
         };
       };
     });
